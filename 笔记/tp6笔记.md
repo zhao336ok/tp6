@@ -100,7 +100,7 @@ echo Config::has('database.connections.mysql.hostname');
 
 ## 四、url访问模式
 
-### 1、url解析
+### url解析
 
 1. tp框架非常多的操作都是通过url来实现的
 2. 多应用：http://servername/index.php /应用/控制器/操作/参数/值……
@@ -137,5 +137,318 @@ class Test
 RewriteRule ^(.*)$ index.php/$1 [QSA,PT,L]
 修改为
 RewriteRule ^(.*)$ index.php?/$1 [QSA,PT,L]
+```
+
+## 五、基础、空、多级控制器
+
+### 1、基础控制器
+
+1. 一般来说，创建控制器后，推荐继承基础控制器来获得更多的方法
+2. 基础控制器仅仅提供了控制器验证功能，并注入think\App和think\Request
+3. 这两个对象后面会详细讲解，下面继承并简单实用一下：
+
+```
+<?php
+namespace app\controller;
+use app\BaseController;
+
+class Test extends BaseController
+{
+    public function index(){
+        //返回实际路径
+        echo '当前方法名为：'.$this->request->action().'<br />';
+        echo '当前实际路径：'.$this->app->getBasePath();
+    }
+}
+```
+
+### 2、空控制器
+
+在单应用模式下，我们可以给项目定义一个Error控制器类，来提示错误：
+
+```
+<?php
+namespace app\controller;
+
+class Error
+{
+    public function index(){
+        return '控制器不存在';
+    }
+}
+```
+
+### 3、多级控制器
+
+1. 所谓多级控制器，就是在控制器controller目录下再建立目录并创建控制器
+2. 我们在controller目录下建立group目录，并创建Blog.php控制器
+3. 此时，访问地址为：http://ldz.tp6.com/group.blog/read
+
+```
+<?php
+namespace app\controller\group;
+
+class Blog
+{
+    public function index(){
+        return 'this is group/blog';
+    }
+
+    public function read(){
+        return 'read……';
+    }
+}
+```
+
+## 六、连接数据库与模型初探
+
+### 1、连接数据库
+
+1. tp采用内置抽象层将不同数据库操作进行封装处理
+2. 数据抽象层基于PDO模式，无须针对不同数据库编写相应代码
+3. 使用数据库的第一步，就是连接数据库
+4. 在根目录的config下的database.php可以设置数据库的链接信息
+5. 大部分系统已经给了默认值，只需要修改和填写需要的值即可
+6. 本地测试，会优先采用.env的配置信息，与database配置对应上即可
+
+```
+// 数据库类型
+'type'              => env('database.type', 'mysql'),
+// 服务器地址
+'hostname'          => env('database.hostname', '127.0.0.1'),
+// 数据库名
+'database'          => env('database.database', ''),
+// 用户名
+'username'          => env('database.username', 'root'),
+// 密码
+'password'          => env('database.password', ''),
+// 端口
+'hostport'          => env('database.hostport', '3306'),
+// 数据库连接参数
+'params'            => [],
+// 数据库编码默认采用utf8
+'charset'           => env('database.charset', 'utf8'),
+// 数据库表前缀
+'prefix'            => env('database.prefix', ''),
+```
+
+7. 可以通过删除改变.env的配置，或删除.env来验证database的执行优先级
+
+8. 在database.php配置中，default表示设置默认的数据库连接
+
+9. connections配置数据库连接信息，可以使多个数据库，便于切换
+
+10. 默认数据库连接名称为：'mysql'，再复制一组数据库连接信息：'demo'切换
+
+11. 创建一个用于测试数据库连接的控制器：DataTest.php
+
+    - 根目录下的.env文件：
+
+    ```
+    APP_DEBUG = true
+    
+    [APP]
+    DEFAULT_TIMEZONE = Asia/Shanghai
+    
+    [DATABASE]
+    TYPE = mysql
+    HOSTNAME = 127.0.0.1
+    DATABASE = tp6-1
+    DATABASE2 = tp6-2
+    USERNAME = root
+    PASSWORD = root
+    HOSTPORT = 3306
+    CHARSET = utf8
+    DEBUG = true
+    
+    [LANG]
+    default_lang = zh-cn
+    ```
+
+    - config/database.php
+
+    ```
+    <?php
+    
+    return [
+        // 默认使用的数据库连接配置
+        'default'         => env('database.driver', 'mysql'),
+    
+        // 自定义时间查询规则
+        'time_query_rule' => [],
+    
+        // 自动写入时间戳字段
+        // true为自动识别类型 false关闭
+        // 字符串则明确指定时间字段类型 支持 int timestamp datetime date
+        'auto_timestamp'  => true,
+    
+        // 时间字段取出后的默认时间格式
+        'datetime_format' => 'Y-m-d H:i:s',
+    
+        // 数据库连接配置信息
+        'connections'     => [
+            'mysql' => [
+                // 数据库类型
+                'type'              => env('database.type', 'mysql'),
+                // 服务器地址
+                'hostname'          => env('database.hostname', '127.0.0.1'),
+                // 数据库名
+                'database'          => env('database.database', ''),
+                // 用户名
+                'username'          => env('database.username', 'root'),
+                // 密码
+                'password'          => env('database.password', ''),
+                // 端口
+                'hostport'          => env('database.hostport', '3306'),
+                // 数据库连接参数
+                'params'            => [],
+                // 数据库编码默认采用utf8
+                'charset'           => env('database.charset', 'utf8'),
+                // 数据库表前缀
+                'prefix'            => env('database.prefix', ''),
+    
+                // 数据库部署方式:0 集中式(单一服务器),1 分布式(主从服务器)
+                'deploy'            => 0,
+                // 数据库读写是否分离 主从式有效
+                'rw_separate'       => false,
+                // 读写分离后 主服务器数量
+                'master_num'        => 1,
+                // 指定从服务器序号
+                'slave_no'          => '',
+                // 是否严格检查字段是否存在
+                'fields_strict'     => true,
+                // 是否需要断线重连
+                'break_reconnect'   => false,
+                // 监听SQL
+                'trigger_sql'       => env('app_debug', true),
+                // 开启字段缓存
+                'fields_cache'      => false,
+                // 字段缓存路径
+                'schema_cache_path' => app()->getRuntimePath() . 'schema' . DIRECTORY_SEPARATOR,
+            ],
+            'demo' => [
+                // 数据库类型
+                'type'              => env('database.type', 'mysql'),
+                // 服务器地址
+                'hostname'          => env('database.hostname', '127.0.0.1'),
+                // 数据库名
+                'database'          => env('database.database2', 'tp6-2'),
+                // 用户名
+                'username'          => env('database.username', 'root'),
+                // 密码
+                'password'          => env('database.password', 'root'),
+                // 端口
+                'hostport'          => env('database.hostport', '3306'),
+                // 数据库连接参数
+                'params'            => [],
+                // 数据库编码默认采用utf8
+                'charset'           => env('database.charset', 'utf8'),
+                // 数据库表前缀
+                'prefix'            => env('database.prefix', ''),
+    
+                // 数据库部署方式:0 集中式(单一服务器),1 分布式(主从服务器)
+                'deploy'            => 0,
+                // 数据库读写是否分离 主从式有效
+                'rw_separate'       => false,
+                // 读写分离后 主服务器数量
+                'master_num'        => 1,
+                // 指定从服务器序号
+                'slave_no'          => '',
+                // 是否严格检查字段是否存在
+                'fields_strict'     => true,
+                // 是否需要断线重连
+                'break_reconnect'   => false,
+                // 监听SQL
+                'trigger_sql'       => env('app_debug', true),
+                // 开启字段缓存
+                'fields_cache'      => false,
+                // 字段缓存路径
+                'schema_cache_path' => app()->getRuntimePath() . 'schema' . DIRECTORY_SEPARATOR,
+            ],
+            // 更多的数据库配置信息
+        ],
+    ];
+    
+    ```
+
+    - DataTest.php控制器
+
+    ```
+    <?php
+    namespace app\controller;
+    
+    use think\facade\Db;
+    
+    class DataTest
+    {
+        public function index(){
+            $data = Db::connect('mysql')->table('table1')->select();
+            return json($data);
+        }
+    
+        public function demo(){
+            $data = Db::connect('demo')->table('table1')->select();
+            return json($data);
+        }
+    }
+    ```
+
+
+
+### 2、模型初探
+
+1. 在app目录下创建一个model目录，并创建Table1.php模型类
+
+```
+<?php
+namespace app\model;
+use think\Model;
+
+class Table1 extends Model
+{
+    
+}
+```
+
+2. Table1继承模型基类，即可实现数据库调用
+3. 受保护字段$connection，则可以切换到demo数据库
+
+```
+<?php
+namespace app\model;
+use think\Model;
+
+class Table1 extends Model
+{
+    protected $connection = 'mysql';
+}
+```
+
+4. 控制器调用方式如下：
+
+```
+<?php
+namespace app\controller;
+
+use app\model\Table1;
+use think\facade\Db;
+
+class DataTest
+{
+    public function index(){
+        $data = Db::connect('mysql')->table('table1')->select();
+        return json($data);
+    }
+
+    public function demo(){
+        $data = Db::connect('demo')->table('table1')->select();
+        return json($data);
+    }
+
+    public function Table1(){
+        $data = Table1::select();
+        return json($data);
+    }
+}
 ```
 
