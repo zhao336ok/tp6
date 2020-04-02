@@ -452,3 +452,326 @@ class DataTest
 }
 ```
 
+## 七、数据库的数据查询
+
+### 1、单数据查询
+
+1. Db::table()中的table必须制定完整数据表，包括前缀
+2. 如果希望只查询一条数据，可以使用find()方法，需制定where条件，未查询到值，则返回null
+
+```
+$data = Db::table('table1')->where('id', 30)->find();
+```
+
+3. Db::getLastSql()方法，可以得到最近一条SQL查询的原生语句
+
+```
+SELECT * FROM `table1` WHERE `id` = 30 LIMIT 1
+```
+
+4. 使用findOrFail()方法，查询一条数据，在没有数据时抛出一个异常
+
+```
+$data = Db::table('table1')->where('id', 30)->findOrFail();
+```
+
+5. 使用findOrEmpty()方法，查询一条数据，在没有数据时返回一个空数组
+
+```
+$data = Db::table('table1')->where('id', 30)->findOrEmpty();
+```
+
+### 2、数据集查询
+
+1. 获取多列数据，可以使用select()方法，未查询到数据，返回空数组
+
+```
+$data = Db::table('table1')->select();
+SELECT * FROM `table1`
+```
+
+2. 使用selectOrFail()方法，查询多列数据，未查询到数据，抛出异常
+
+```
+$data1 = Db::table('talbe1')->where('id', 30)->selectOrFail();
+```
+
+3. 在select()方法后加入toArray()方法，可以将数据集对象转化为数组
+
+```
+$data3 = Db::table('table1')->select()->toArray();
+dump($data3);
+```
+
+4. 当在数据库配置文件中设置了前缀，我们可以使用name()方法忽略前缀
+
+```
+Db::name('table1')->select()
+```
+
+### 3、其他查询
+
+1. 通过value()方法，可以查询指定字段的值（单个），没有数据返回null
+
+```
+$data = Db::table('table1')->where('id', 3)->value('name');
+echo $data;
+```
+
+2. 通过colum()方法，可以查询指定字段的值（多个），没有数据返回空数组
+
+```
+$data1 = Db::table('table1')->column('name, school');
+return json($data1);
+```
+
+3. 可以指定id作为列值的索引
+
+```
+$data1 = Db::table('table1')->column('name', 'id');
+return json($data1);
+```
+
+4. 如果处理的数据巨大，成百上千，一次性读取有可能会导致内存开销过大，为了避免内存处理太多数据错处，可以使用chunk()方法分批处理数据
+5. 如：每次只处理100条，处理完毕后，再读取100条继续处理
+
+```
+Db::table('table1')->chunk(3, function ($datas){
+    foreach ($datas as $data){
+    	dump($data);
+    }
+    echo '------------------------------------------------';
+});
+```
+
+6. 可以利用游标查询功能，可以大幅度减少海量数据内存开销，利用php生成器特性。每次查询只读取一行，然后再读取时，自动定位到下一行继续读取
+
+```
+$cursor = Db::table('table1')->cursor();
+foreach ($cursor as $item) {
+	dump($item);
+}
+```
+
+## 八、数据库链式查询
+
+### 1、查询规则
+
+1. 我们通过指向符号“->”多次连续调用方法称为：链式查询
+2. 当Db::name('user')时，返回查询对象(Query)，即可连戳数据库对应的方法
+3. 每次执行一个数据库查询方法时，如：where()，还将返回查询对象(Query)
+4. 只要还是数据库对象，那么久可以一直使用指向符号进行链式查询
+5. 再利用find()、select()等方法返回数组(Array)或数据集对象(Colletion)
+6. 而find()和select()是结果查询方法，并不是链式查询方法
+
+```
+Db::name('user')->where('id', 3)->order('id', 'desc')->find()
+```
+
+7. 除了查询方法可以使用链式连贯操作，CURD操作也可以使用
+
+### 2、更多查询
+
+1. 如果多次使用数据库查询，那么每次静态创建都会生成一个实例，造成浪费
+2. 我们可以把对象实例保存下来，再进行反复调用即可
+
+```
+$table1 = Db::table('table1');
+$data1 = $table1->where('id', 3)->find();
+$data2 = $table1->select();
+```
+
+3. 当同一对象实例第二次查询后，会保留第一次查询值
+
+```
+$table1 = Db::table('table1');
+$data1 = $table1->where('id', 3)->find();
+$data2 = $table1->select();
+
+SELECT * FROM `table1` WHERE `id` = 3
+```
+
+4. 使用removeOption()方法，可以清理上一次查询保留的值
+
+```
+$table1 = Db::table('table1');
+$data1 = $table1->where('id', 3)->find();
+// $data2 = $table1->select();
+$table1->removeOption('where')->select();
+return Db::getLastSql();
+
+SELECT * FROM `table1`
+```
+
+## 九、数据库的数据新增
+
+### 1、单数据新增
+
+1. 使用insert()方法可以向数据表添加一条数据，新增成功，返回1
+
+```
+$data = [
+    'name'=>'哈哈',
+    'school'=>'哈班',
+    'sex'=>'女'
+];
+Db::table('table1')->insert($data);
+```
+
+2. 如果添加一个不存在的字段数据，会抛出异常Exception
+3. 如果想强行新增抛弃不存在的字段数据，则使用strick(false)方法，忽略异常
+
+```
+$data = [
+    'name'=>'哈哈11',
+    'school'=>'哈班11',
+    'sex'=>'女1',
+    'status'=>0 //数据库不存在该字段
+];
+Db::table('table1')->strict(false)->insert($data);
+```
+
+4. 如果我们采用数据库是mysql，可以支持replace写入
+5. insert和replace写入的区别，前者表示表中存在主键相同则报错，后者则修改
+
+```
+$data = [
+    'name'=>'哈哈11',
+    'school'=>'哈班11',
+    'sex'=>'女1',
+    'status'=>0 //数据库不存在该字段
+];
+Db::table('table1')->replace()->insert($data);
+```
+
+6. 使用insertGetId()方法，可以在新增采成功后返回当前数据ID
+
+```
+$data = [
+    'name'=>'哈哈11',
+    'school'=>'哈班11',
+    'sex'=>'女1'
+];
+return Db::table('table1')->insertGetId($data);
+```
+
+### 2、批量新增数据
+
+1. 使用insertAll()方法，可以批量新增数据，但要保持数据结构一致
+
+```
+$data = [
+    [
+        'name'=>'嘿嘿1',
+        'school'=>'嘿班1'
+    ],
+    [
+        'name'=>'嘿嘿2',
+        'school'=>'嘿班2'
+    ]
+];
+return Db::name('table1')->insertAll($data);
+```
+
+2. 批量新增也支持replace()方法，添加后改变成replace into
+
+```
+Db::name('table1')->save($data);
+```
+
+### 3、save新增
+
+1. save()方法时一个通用方法，可以自行判断是新增还是修改数据
+2. save()方法判断是否为新增或修改的依据为：是否存在主键，不存在则为新增
+
+```
+$data = [
+    'name'=>'哈哈11',
+    'school'=>'哈班11',
+    'sex'=>'女1',
+];
+return Db::name('table1')->save($data);
+```
+
+## 十、数据库的修改删除
+
+### 1、数据修改
+
+1. 使用update()方法修改数据，修改成功返回影响行数，未成功修改返回0
+
+```
+$data = [
+	'name'=>'哈嘿1'
+];
+return Db::name('table1')->where('id', 7)->update($data);
+```
+
+2. 如果修改数据包含了主键信息，如：id，则可以省略where条件
+
+```
+return Db::name('table1')->update([
+    'id'=>7,
+    'name'=>'哈哈11'
+]);
+```
+
+3. 如果想让一些字段修改时执行SQL函数操作，可以使用exp()方法实现
+
+```
+Db::name('table1')->where('id', 17)
+            ->exp('sex','UPPER(sex)') //让sex值全部大写
+            ->update();
+```
+
+4. 如果要自增/自减某个字段，可以使用inc/dec方法，并支持自定义步长
+
+```
+Db::name('table1')->where('id', 18)
+            ->inc('age') 		//自增1
+            ->dec('weight', 2)	//自减2
+            ->update();
+```
+
+5. 使用::raw()方法实现上面第三、四条的修改
+
+```
+Db::name('table1')->where('id', 17)
+            ->update([
+                    'sex'=>     Db::raw('UPPER(sex)'),
+                    'age'=>     Db::raw('age+1'),
+                    'weight'=>  Db::raw('weight-2')
+                ]);
+```
+
+6. 使用save()方法进行修改数据，必须指定主键才能实现修改
+
+```
+Db::name('table1')->where('id', 17)->save(['name'=>'不知道']);
+```
+
+### 2、数据删除
+
+1. 根据主键直接删除，删除成功返回影响行数，否则为0
+
+```
+Db::name('table1')->delete(19);
+```
+
+2. 根据主键，还可以删除多条记录
+
+```
+Db::name('table1')->delete([10, 11, 12]);
+```
+
+3. 正常情况下，通过where()方法来删除
+
+```
+Db::name('table1')->where('id', 13)->delete();
+```
+
+4. 通过true参数删除数据表所有数据
+
+```
+
+```
+
