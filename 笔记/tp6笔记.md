@@ -772,6 +772,104 @@ Db::name('table1')->where('id', 13)->delete();
 4. 通过true参数删除数据表所有数据
 
 ```
+Db::name('table2')->delete(true);
+```
+
+## 十一、数据库的查询方式
+
+### 1、比较查询
+
+1. 查询表达式支持大部分常用的SQL语句，语法格式如下：
 
 ```
+where('字段名', '查询表达式', '查询条件')
+```
+
+2. 在查询数据进行筛选时，我们采用where()方法，如：id=80
+
+```
+Db::name('user')->where('id', 80)->find()
+Db::name('user')->where('id', '=', 80)->find()
+```
+
+3. 使用<>、>、<、>=、<=可以筛选出各种符合比较值的数据列表
+
+```
+Db::name('user')->where('id', '<>', 80)->select()
+```
+
+### 2、区间查询
+
+1. 使用like表达式进行模糊查询
+
+```
+$data = Db::name('table1')->where('name', 'like', '%哈哈%')->select();
+return json($data);
+```
+
+2. like表达式还支持数据进行模糊查询
+
+```
+$data = Db::name('table1')->where('name', 'like', ['%一%', '%二%'], 'or')->select();
+return json($data);
+```
+
+3. like表达式两个快捷方式whereLike()和whereNotLike()
+
+```
+$data = Db::name('table1')->whereLike('name', '%一%')->select();
+return json($data);
+```
+
+4. between表达式具有两个快捷方式whereBetween()和whereNotBetween()
+
+```
+$data = Db::name('table1')->where('age', 'between', '10,15')->select();
+return json($data);
+```
+
+```
+$data = Db::name('table1')->whereBetween('age', '10, 15')->select();
+return json($data);
+```
+
+5. in表达式具有两个快捷方式whereIn()和whereNotIn
+
+```
+$data = Db::name('table1')->where('id', 'in', '3,4,5')->select();
+return json($data);
+```
+
+```
+$data = Db::name('table1')->whereIn('id', '1,2,3')->select();
+return json($data);
+```
+
+6. null表达式具有两个快捷方式whereNull()和whereNotNull()
+
+```
+$data = Db::name('table1')->where('sex', 'null')->select();
+return json($data);
+```
+
+```
+$data = Db::name('table1')->whereNull('age')->select();
+return json($data);
+```
+
+### 3、EXP查询
+
+- 使exp可以自定义字段后的SQL语句
+
+```
+$data = Db::name('table1')->where('id', 'exp', 'in (1,2,3)')->select();·
+return json($data);
+```
+
+```
+$data = Db::name('table1')->whereExp('id', ' not in (1,2,3,4,5,6)')->select();
+return json($data);
+```
+
+## 十二、数据库的时间查询
 

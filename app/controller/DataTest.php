@@ -130,4 +130,20 @@ class DataTest
 //        Db::name('table1')->delete([10, 11, 12]);
         Db::name('table2')->delete(true);
     }
+
+    public function bijiao(){
+//        $data = Db::name('table1')->where('age', '<', 15)->select();
+//        $data = Db::name('table1')->where('name', 'like', '%哈哈%')->select();
+//        $data = Db::name('table1')->where('name', 'like', ['%一%', '%二%'], 'or')->select();
+//        $data = Db::name('table1')->whereLike('name', '%一%')->select();
+//        $data = Db::name('table1')->where('age', 'between', '10,15')->select();
+//        $data = Db::name('table1')->whereBetween('age', '10, 15')->select();
+//        $data = Db::name('table1')->where('id', 'in', '3,4,5')->select();
+//        $data = Db::name('table1')->whereIn('id', '1,2,3')->select();
+//        $data = Db::name('table1')->where('sex', 'null')->select();
+//        $data = Db::name('table1')->whereNull('age')->select();
+//        $data = Db::name('table1')->where('id', 'exp', 'in (1,2,3)')->select();
+        $data = Db::name('table1')->whereExp('id', ' not in (1,2,3,4,5,6)')->select();
+        return json($data);
+    }
 }
