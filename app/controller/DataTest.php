@@ -146,4 +146,101 @@ class DataTest
         $data = Db::name('table1')->whereExp('id', ' not in (1,2,3,4,5,6)')->select();
         return json($data);
     }
+
+    public function time(){
+//        $data = Db::name('table1')->where('create_time', '>', '2020-2-3')->select();
+//        $data = Db::name('table1')->whereBetween('create_time',['2020-2-3','2020-4-9'])->select();
+//        $data = Db::name('table1')->whereTime('create_time', '>', '2020-2-3')->select();
+//        $data = Db::name('table1')->whereBetweenTime('create_time','2020-2-3', '2020-4-9')->select();
+//        $data = Db::name('table1')->whereTime('create_time', '2020-2-3')->select();
+//        $data = Db::name('table1')->whereYear('create_time')->select();//查询今年数据
+//        $data1 = Db::name('table1')->whereYear('create_time', 'last year')->select();//查询去年数据
+//        $data2 = Db::name('table1')->whereYear('create_time', '2019')->select();//查询某一年数据
+
+//        $data = Db::name('table1')->whereMonth('create_time')->select();//查询当月数据
+//        $data1 = Db::name('table1')->whereMonth('create_time', 'last month')->select();//查询上月数据
+//        $data2 = Db::name('table1')->whereMonth('create_time', '2019-3')->select();//查询某月数据
+
+//        $data = Db::name('table1')->whereDay('create_time')->select();//查询今天数据
+//        $data1 = Db::name('table1')->whereDay('create_time', 'last day')->select();//查询昨天数据
+//        $data2 = Db::name('table1')->whereDay('create_time', '2020-4-8')->select();//查询某天数据
+
+
+//        $data = Db::name('table1')->whereTime('create_time', '-2 hours')->select();//查询两个小时之内数据
+        Db::name('table1')->whereBetweenTimeField('create_time','update_time')->select();
+
+
+        return Db::getLastSql();
+        return json($data);
+    }
+
+    public function juhe(){
+//        $data = Db::name('table1')->count();
+//        $data = Db::name('table1')->count('age');
+//        $data = Db::name('table1')->max('name', false);
+//        $data = Db::name('table1')->min('age');
+//        $data = Db::name('table1')->avg('age');
+        $data = Db::name('table1')->sum('age');
+        return json($data);
+    }
+
+    public function zichaxun(){
+//        $data = Db::name('table1')->fetchSql(false)->select();
+//        $data = Db::name('table1')->buildSql();
+//        $query = Db::name('table2')->field('uid')->where('hobby', '乒乓球')->buildSql();
+//        $data = Db::name('table1')->where('id', 'exp', 'IN '.$query)->select();
+
+        $data = Db::name('table1')->where('id', 'in', function ($query){
+            $query->name('table2')->field('uid')->where('hobby', '乒乓球');
+        })->select();
+        return json($data);
+    }
+
+    public function yuansheng(){
+//        $data = Db::query('select * from table1');
+
+        $data = Db::execute('update table1 set name="五五" where id=5');
+        return json($data);
+    }
+
+    public function where(){
+//        $data = Db::name('table1')->where('age', '>','55')->select();
+//        $data = Db::name('table1')->where([
+//            'name'=>'一一',
+//            'age'=>11
+//        ])->select();
+
+//        $data = Db::name('table1')->where([
+//            ['name', '=', '一一'],
+//            ['age', '>', '10']
+//        ])->select();
+
+//        $map[] = ['sex', '=', '女'];
+//        $map[] = ['age', 'in', [11, 44, 77]];
+//        $data = Db::name('table1')->where($map)->select();
+
+//        $data = Db::name('table1')->whereRaw('sex="女" AND age IN (11, 44, 77)')->select();
+
+        $data = Db::name('table1')->whereRaw('id=:id', ['id'=>1])->select();
+        return json($data);
+    }
+
+    public function field(){
+        $db = Db::name('table1');
+
+//        $data = $db->field('id, name')->select();
+//        $data = $db->field('id, name as "姓名"')->select();
+//        $data = $db->field(['id', 'name' => 'truename'])->select();
+
+//        $data = $db->fieldRaw('name, SUM(age)')->select();
+        $data = $db->withoutField('create_time, update_time')->select();
+        return json($data);
+    }
+
+    public function alias(){
+        $data = Db::name('table1')->alias('a')->select();
+
+        return Db::getLastSql();
+        return json($data);
+    }
 }

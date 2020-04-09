@@ -873,3 +873,295 @@ return json($data);
 
 ## 十二、数据库的时间查询
 
+### 1、传统方式
+
+可以使用>、<、>=、<=来筛选匹配时间数据
+
+```
+$data = Db::name('table1')->where('create_time', '>', '2020-2-3')->select();
+return json($data);
+```
+
+
+
+### 2、快捷方式
+
+1. 时间查询的快捷方式为whereTime()，直接使用>、<、>=、<=
+
+```
+$data = Db::name('table1')->whereTime('create_time', '>', '2020-2-3')->select();
+return json($data);
+```
+
+2. 快捷方式也可以使用between和not between
+
+```
+$data = Db::name('table1')->whereBetween('create_time',['2020-2-3','2020-4-9'])->select();
+ return json($data);
+```
+
+3. whereBetweenTime()和whereNotBetweenTime()
+
+```
+$data = Db::name('table1')->whereBetweenTime('create_time','2020-2-3', '2020-4-9')->select();
+return json($data);
+```
+
+4. 默认的大于号>，可以省略
+
+```
+$data = Db::name('table1')->whereTime('create_time', '2020-2-3')->select();
+return json($data);
+```
+
+### 3、固定查询
+
+1. 使用whereYear查询今年数据，去年数据和某一年数据
+
+```
+$data = Db::name('table1')->whereYear('create_time')->select();//查询今年数据
+$data1 = Db::name('table1')->whereYear('create_time', 'last year')->select();//查询去年数据
+$data2 = Db::name('table1')->whereYear('create_time', '2019')->select();//查询某一年数据
+return json($data);
+```
+
+2. 使用whereMonth查询当月数据、上月数据和某月数据
+
+```
+$data = Db::name('table1')->whereMonth('create_time')->select();//查询当月数据
+$data1 = Db::name('table1')->whereMonth('create_time', 'last month')->select();//查询上月数据
+$data2 = Db::name('table1')->whereMonth('create_time', '2019-3')->select();//查询某月数据
+return json($data);
+```
+
+3. 使用whereDay查询今天数据、昨天数据和某天数据
+
+```
+$data = Db::name('table1')->whereDay('create_time')->select();//查询今天数据
+$data1 = Db::name('table1')->whereDay('create_time', 'last day')->select();//查询昨天数据
+$data2 = Db::name('table1')->whereDay('create_time', '2020-4-8')->select();//查询某天数据
+return json($data);
+```
+
+### 4、其他查询
+
+1. 查询指定时间的数据，比如：两小时之内
+
+```
+$data = Db::name('table1')->whereTime('create_time', '-2 hours')->select();//查询两个小时之内数据
+return json($data);
+```
+
+2. 查询两个时间字段时间有效期的数据，比如会员开始到结束期间
+
+```
+Db::name('table1')->whereBetweenTimeField('create_time','update_time')->select();
+return Db::getLastSql();
+
+相当于
+Db::name('table1')
+	->whereTime('create_time', '<=', time())
+    ->whereTime('update_time', '>=', time())
+    ->select();
+```
+
+## 十三、聚合、原生、子查询
+
+### 1、聚合查询
+
+1. 使用count()方法，可以求出查询数据的数量
+
+```
+$data = Db::name('table1')->count();
+return json($data);
+```
+
+2. count()方法可设置指定id，比如空值不会计算数量
+
+```
+$data = Db::name('table1')->count('age');
+```
+
+3. 使用max()方法，求出查询数据字段的最大值
+
+```
+$data = Db::name('table1')->max('age');
+```
+
+4. 如果max()方法，求出的值不是数值，则可以通过第二个参数强制转换
+
+```
+$data = Db::name('table1')->max('name' ,false);
+```
+
+5. 使用min()方法，求出查询数据字段的最小值，也可以强制转换
+
+```
+$data = Db::name('table1')->min('age');
+```
+
+6. 使用avg()方法，求出查询数据字段的平均值
+
+```
+$data = Db::name('table1')->avg('age');
+```
+
+7. 使用sum()方法，求出查询数据字段的和
+
+```
+$data = Db::name('table1')->sum('age');
+```
+
+### 2、子查询
+
+1.  使用fetchSql()方法，可以设置不执行SQL，而返回SQL语句，默认true
+
+```
+$data = Db::name('table1')->fetchSql(true)->select();
+return json($data);
+
+返回结果：
+SELECT * FROM `table1`
+```
+
+2. 使用buildSql()方法，返回SQL语句，不需要再执行select()，且有括号，默认为true
+
+```
+$data = Db::name('table1')->buildSql();
+return json($data);
+
+返回结果：
+( SELECT * FROM `table1` )
+```
+
+3. 案例：查询所有乒乓球爱好者
+
+```
+方法一：
+$query = Db::name('table2')->field('uid')->where('hobby', '乒乓球')->buildSql();//查询出乒乓球爱好者的uid
+$data = Db::name('table1')->where('id', 'exp', 'IN '.$query)->select();
+return json($data);
+
+方法二：
+$data = Db::name('table1')->where('id', 'in', function ($query){
+	$query->name('table2')->field('uid')->where('hobby', '乒乓球');
+})->select();
+return json($data);
+```
+
+### 3、原生查询
+
+1. 使用query()方法，进行原生SQL查询，适用于读取操作，SQL错误返回false
+
+```
+$data = Db::query('select * from table1');
+return json($data);
+```
+
+2. 使用execute()方法，进行原生SQL更新、写入等，SQL错误返回false
+
+```
+$data = Db::execute('update table1 set name="五五" where id=5');
+return json($data);
+```
+
+## 十四、链式查询
+
+### 1、where
+
+1. 表达式查询
+
+```
+$data = Db::name('table1')->where('age', '>','55')->select();
+return json($data);
+```
+
+2. 关联数据查询，通过键值对来数组键值对匹配查询
+
+```
+$data = Db::name('table1')->where([
+    'name'=>'一一',
+    'age'=>11
+])->select();
+return json($data);
+```
+
+3. 索引数组查询，通过数组里的数组拼装方式来查询
+
+```
+$data = Db::name('table1')->where([
+    ['name', '=', '一一'],
+    ['age', '>', '10']
+])->select();
+return json($data);
+```
+
+4. 将复杂数组组装后，通过变量传递，将增加可读性
+
+```
+$map[] = ['sex', '=', '女'];
+$map[] = ['age', 'in', [11, 44, 77]];
+$data = Db::name('table1')->where($map)->select();
+return json($data);
+```
+
+5. 字符串形式传递，简单粗暴的查询方式，whereRaw()支持复杂字符串格式
+
+```
+$data = Db::name('table1')->whereRaw('sex="女" AND age IN (11, 44, 77)')->select();
+return json($data);
+```
+
+6. 如果SQL查询采用预处理模式，比如：id=:id，也能够支持
+
+```
+$data = Db::name('table1')->whereRaw('id=:id', ['id'=>1])->select();
+return json($data);
+```
+
+### 2、filed
+
+1. 指定要查询的字段
+
+```
+$data = $db->field('id, name')->select();
+$data = $db->field(['id', 'name'])->select();
+```
+
+2. 给指定字段设置别名
+
+```
+$data = $db->field('id, name as "姓名"')->select();
+$data = $db->field(['id', 'name' => 'truename'])->select();
+```
+
+3. 在fieldRaw()方法里，可以直接给指端设置SQL函数
+
+```
+$data = $db->fieldRaw('name, SUM(age)')->select();
+```
+
+4. 使用withoutField()方法中字段排除，可以屏蔽掉不显示的字段
+
+```
+$data = $db->withoutField('create_time, update_time')->select();
+```
+
+5. 验证字段的合法性
+
+```
+$data = $db->field('name', 'age')->insert($data);//添加的字段只能有name, age如果含有其他字段则会报错
+```
+
+### 3、alias
+
+1. 给数据库起别名
+
+```
+Db::name('table1')->alias('a')->select();
+return Db::getLastSql();
+        
+返回结果：
+SELECT * FROM `table1` `a`
+```
+
